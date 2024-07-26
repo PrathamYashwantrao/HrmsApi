@@ -1,0 +1,290 @@
+using System;
+using System.Collections.Generic;
+
+class Bank
+{
+    private List<Account> accounts;
+    private List<User> users;
+    private int nextAccountNumber;
+    private int nextUserId;
+
+    public Bank(int maxAccounts)
+    {
+        accounts = new List<Account>();
+        users = new List<User>();
+        nextAccountNumber = 1001;
+        nextUserId = 1;
+    }
+
+    public void Register(string username, string password, string accountHolder, double initialBalance)
+    {
+        if (!UserExists(username))
+        {
+            User newUser = new User(nextUserId++, username, password);
+            users.Add(newUser);
+
+            Account newAccount = new Account(nextAccountNumber++, accountHolder, initialBalance);
+            newAccount.Owner = newUser;
+            accounts.Add(newAccount);
+
+            Console.WriteLine($"Account created successfully. Account Number: {newAccount.AccountNumber}");
+        }
+        else
+        {
+            Console.WriteLine("Username already exists. Please choose another username.");
+        }
+    }
+
+    public bool Login(string username, string password)
+    {
+        User user = GetUser(username);
+        if (user != null && user.ValidatePassword(password))
+        {
+            Console.WriteLine($"Login successful! Welcome, {user.Username}!");
+            return true;
+        }
+        else
+        {
+            Console.WriteLine("Invalid username or password. Please try again.");
+            return false;
+        }
+    }
+
+    public void Deposit(int accountNumber, double amount)
+    {
+        Account account = GetAccount(accountNumber);
+        if (account != null)
+        {
+            account.Deposit(amount);
+            Console.WriteLine($"Deposit successful. New balance: {account.Balance}");
+        }
+        else
+        {
+            Console.WriteLine("Account not found.");
+        }
+    }
+
+    public void Withdraw(int accountNumber, double amount)
+    {
+        Account account = GetAccount(accountNumber);
+        if (account != null)
+        {
+            if (account.Withdraw(amount))
+            {
+                Console.WriteLine($"Withdrawal successful. New balance: {account.Balance}");
+            }
+            else
+            {
+                Console.WriteLine("Insufficient funds.");
+            }
+        }
+        else
+        {
+            Console.WriteLine("Account not found.");
+        }
+    }
+
+    public void ViewAccountInfo(int accountNumber)
+    {
+        Account account = GetAccount(accountNumber);
+        if (account != null)
+        {
+            Console.WriteLine($"Account Number: {account.AccountNumber}");
+            Console.WriteLine($"Account Holder: {account.AccountHolder}");
+            Console.WriteLine($"Balance: {account.Balance}");
+        }
+        else
+        {
+            Console.WriteLine("Account not found.");
+        }
+    }
+
+    private bool UserExists(string username)
+    {
+        return users.Exists(user => user.Username == username);
+    }
+
+    private User GetUser(string username)
+    {
+        return users.Find(user => user.Username == username);
+    }
+
+    private Account GetAccount(int accountNumber)
+    {
+        return accounts.Find(account => account.AccountNumber == accountNumber);
+    }
+}
+
+class User
+{
+    public int UserId { get; }
+    public string Username { get; }
+    private string Password { get; }
+
+    public User(int userId, string username, string password)
+    {
+        UserId = userId;
+        Username = username;
+        Password = password;
+    }
+
+    public bool ValidatePassword(string password)
+    {
+        return Password == password;
+    }
+}
+
+class Account
+{
+    public int AccountNumber { get; }
+    public string AccountHolder { get; }
+    public double Balance { get; private set; }
+    public User Owner { get; set; }
+
+    public Account(int accountNumber, string accountHolder, double initialBalance)
+    {
+        AccountNumber = accountNumber;
+        AccountHolder = accountHolder;
+        Balance = initialBalance;
+    }
+
+    public void Deposit(double amount)
+    {
+        Balance += amount;
+    }
+
+    public bool Withdraw(double amount)
+    {
+        if (amount <= Balance)
+        {
+            Balance -= amount;
+            return true;
+        }
+        return false;
+    }
+}
+
+class Program
+{
+    static void Main()
+    {
+        Bank bank = new Bank(10); // You can set the maximum number of accounts
+
+        while (true)
+        {
+            Console.WriteLine("Choose an option:");
+            Console.WriteLine("1. Register");
+            Console.WriteLine("2. Login");
+            Console.WriteLine("3. Deposit");
+            Console.WriteLine("4. Withdraw");
+            Console.WriteLine("5. View Account Info");
+            Console.WriteLine("6. Exit");
+
+            int choice;
+            if (int.TryParse(Console.ReadLine(), out choice))
+            {
+                switch (choice)
+                {
+                    case 1:
+                        Console.Write("Enter username: ");
+                        string registerUsername = Console.ReadLine();
+                        Console.Write("Enter password: ");
+                        string registerPassword = Console.ReadLine();
+                        Console.Write("Enter account holder name: ");
+                        string accountHolder = Console.ReadLine();
+                        Console.Write("Enter initial balance: ");
+                        double initialBalance;
+                        if (double.TryParse(Console.ReadLine(), out initialBalance))
+                        {
+                            bank.Register(registerUsername, registerPassword, accountHolder, initialBalance);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid input for initial balance.");
+                        }
+                        break;
+
+                    case 2:
+                        Console.Write("Enter username: ");
+                        string loginUsername = Console.ReadLine();
+                        Console.Write("Enter password: ");
+                        string loginPassword = Console.ReadLine();
+                        if (bank.Login(loginUsername, loginPassword))
+                        {
+                            // Successful login, perform banking operations here
+                        }
+                        break;
+
+                    case 3:
+                        Console.Write("Enter account number: ");
+                        int depositAccountNumber;
+                        if (int.TryParse(Console.ReadLine(), out depositAccountNumber))
+                        {
+                            Console.Write("Enter deposit amount: ");
+                            double depositAmount;
+                            if (double.TryParse(Console.ReadLine(), out depositAmount))
+                            {
+                                bank.Deposit(depositAccountNumber, depositAmount);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Invalid input for deposit amount.");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid input for account number.");
+                        }
+                        break;
+
+                    case 4:
+                        Console.Write("Enter account number: ");
+                        int withdrawAccountNumber;
+                        if (int.TryParse(Console.ReadLine(), out withdrawAccountNumber))
+                        {
+                            Console.Write("Enter withdrawal amount: ");
+                            double withdrawAmount;
+                            if (double.TryParse(Console.ReadLine(), out withdrawAmount))
+                            {
+                                bank.Withdraw(withdrawAccountNumber, withdrawAmount);
+                            }
+                            else
+                            {
+                                Console.WriteLine("Invalid input for withdrawal amount.");
+                            }
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid input for account number.");
+                        }
+                        break;
+
+                    case 5:
+                        Console.Write("Enter account number: ");
+                        int viewAccountNumber;
+                        if (int.TryParse(Console.ReadLine(), out viewAccountNumber))
+                        {
+                            bank.ViewAccountInfo(viewAccountNumber);
+                        }
+                        else
+                        {
+                            Console.WriteLine("Invalid input for account number.");
+                        }
+                        break;
+
+                    case 6:
+                        Environment.Exit(0);
+                        break;
+
+                    default:
+                        Console.WriteLine("Invalid choice. Please enter a number between 1 and 6.");
+                        break;
+                }
+            }
+            else
+            {
+                Console.WriteLine("Invalid input. Please enter a number.");
+            }
+
+            Console.WriteLine(); // Add a newline for better readability
+       
